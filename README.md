@@ -1,53 +1,59 @@
-Character Duel Simulator - Extended Architecture
+# Character Duel Simulator - Extended Architecture
 
-Project Overview
+## Project Overview
 
-This is an advanced, refactored version of the original Node.js/TypeScript RPG battle simulator. The core logic was completely rewritten to implement Object-Oriented Programming (OOP) design patterns, specifically the Strategy Pattern and Event Hooks. This transforms the project from a rigid script into a highly scalable, decoupled combat system capable of handling complex mechanics like armor overflow and lifesteal.
+This is an advanced, refactored version of the original Node.js/TypeScript RPG battle simulator. The core logic was rewritten to use Object-Oriented Programming (OOP) concepts, specifically the Strategy Pattern and Event Hooks. This changes the project from a basic script with if/else statements into a scalable system that handles complex rules like armor overflow and lifesteal safely.
 
-Tech Stack
+## Tech Stack
 
-TypeScript: Used to enforce strict contracts (Interfaces) between characters and abilities.
-Node.js: Runtime environment.
-ts-node: Used for direct execution of TypeScript files without manual compilation steps.
+* TypeScript: Used to ensure type safety and strict contracts (Interfaces) between characters and abilities.
+* Node.js: Runtime environment.
+* ts-node: Used to run the TypeScript files directly in the terminal.
 
-How to Run
+## How to Run
 
-To run this project locally, ensure you have Node.js installed.
+To run this project locally, make sure you have Node.js installed.
 Clone the repository and navigate to the project folder.
+
 Install dependencies:
 npm install
 
-Run the simulator directly from the source folder:
+Run the simulator:
 npx ts-node src/index.ts
 
-Core Logic & Architecture
+## Core Logic & Architecture
 
-The combat system no longer relies on hardcoded if/else statements. Instead, abilities are isolated classes that implement an IAbility interface. The Character class simply calls event hooks (modifyAttack, modifyDefense, onAfterDamage) during specific combat phases.
+The combat system is now decoupled. Abilities are isolated classes that implement an IAbility interface. The Character class simply triggers events (modifyAttack, modifyDefense, onAfterDamage) during the fight, and the abilities react to them.
 
-Stats: Characters start with 100 Max HP, 30 Armour, Attack (15-20), and Defense (10-15).
-Armor Overflow Logic: Incoming damage hits Armour first. Only when Armour reaches 0 does the remaining unabsorbed damage spill over to the character's HP.
+* Base Stats: Characters start with 100 Max HP, 30 Armour, Attack (15-20), and Defense (10-15).
+* Armor Overflow: Damage hits Armour first. If the armor breaks, only the remaining damage affects the character's HP.
 
-Current Ability Pool (25% trigger chance):
+Current Abilities (25% chance to trigger):
 1. Power Strike: Multiplies base attack by 1.5x.
-2. Damage Reduction: Halves incoming damage before base defense is subtracted.
-3. Second Wind: Heals 5 HP, triggering only when health drops to 30 or below.
-4. Vampirism: Heals the attacker for 30% of the actual health damage dealt.
+2. Damage Reduction: Cuts incoming damage in half before defense is applied.
+3. Second Wind: Heals 5 HP, but only triggers exactly when health drops to 30 or below.
+4. Vampirism: Heals the attacker for 30% of the actual HP damage dealt to the enemy.
 
-Edge Cases Handled (Resiliency)
+## Edge Cases Handled
 
-To ensure mathematical accuracy and prevent game-breaking bugs, several edge cases were addressed:
+To make sure the game never crashes or does weird math, I handled these edge cases:
+* Negative HP Prevention: The game stops HP exactly at 0. This also stops the Vampirism ability from stealing health from "overkill" damage.
+* Overheal Prevention: Healing abilities use a maxHealth limit so characters can't go above 100 HP and become invincible.
+* Armor Check for Lifesteal: Vampirism only heals if the attacker damages the actual HP of the enemy. Hitting armor gives no health back.
+* Infinite Loop Prevention: If the combat goes on for 10 rounds with no HP changes (e.g. both block all damage), the game forces a DRAW.
 
-Contextual Lifesteal: Vampirism calculates healing strictly based on damage applied to health (blood). Damage absorbed by armor yields no healing for the attacker.
-Overkill & Health Clamping: Damage calculations ensure HP stops exactly at 0. This prevents negative values and stops lifesteal from calculating returns on "phantom" damage beyond the defender's remaining health.
-Overheal Prevention: Healing from Second Wind or Vampirism is capped using the character's maxHealth property to prevent infinite scaling or invincibility.
-Stagnation / Deadlock Detection: If combat loops for 10 rounds with no HP changes or ability triggers (e.g., both characters have high defense), the match is safely terminated and declared a DRAW.
-Strict State Transitions: Second Wind checks prevHealth against currentHealth to trigger only once upon crossing the threshold, preventing constant healing loops.
+## Future Extensions & Scalability
 
-Future Extensions & Scalability
+Because of the Strategy Pattern, adding new abilities is very easy. If I were to keep working on this project, here is what I would do next:
 
-Since adding new abilities is now extremely easy due to the Strategy Pattern (it only requires creating a new class without touching the core combat loop), here is how I would approach future extensions:
-1. Character Classes: Implement specific classes (Tank, Assassin, Mage) that inherit from the base Character. Each class would have weighted stat distributions (e.g., Tanks start with 50 Armour but lower Attack) and exclusive ability pools.
-2. Mass Simulation & Analytics: Wrap the startDuel function in a loop to run 10,000 automated matches with logging disabled. The output would simply display win rates for each ability, allowing for data-driven balance patches.
-3. Combat Logging: Instead of just printing to the console, I would build a service to write the round-by-round combat data into a JSON file, creating a permanent history that could be read by a future frontend interface.
+1. Run 1,000 matches to find win rates:
+I would wrap the startDuel function in a loop that runs 1,000 times. To keep it fast and prevent the terminal from freezing, I would disable the console.log messages and just count the wins for each ability to see which one is the strongest.
 
+2. Add different Character Classes:
+Right now, everyone uses the exact same base stats. I would create new classes like Warrior or Mage that extend the base Character. A Warrior would start with 50 armor but lower attack, and would only have access to defense abilities.
+
+3. Save the match history:
+Instead of just printing the fight in the terminal, I would write a function to save the round-by-round data into a JSON file. This would be very useful if I ever decide to build a frontend in React to actually show the fight visually.
+
+---
 Developed by Tamara Sauciuc
